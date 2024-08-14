@@ -26,6 +26,11 @@ date_fmt=%Y-%m-%d %H:%M:%S
 timestep=15
 
 mod_ldwn=N
+domainDim=32,31
+latEdge=47.3769
+lonEdge=8.5417
+latResolution=0.00090933
+lonResolution=0.00130123
 
 #---------------------------------------------------------------------------------------------------------
 # dates
