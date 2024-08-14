@@ -179,16 +179,16 @@ You can index the array to desired ID and/or times and then output the variables
 
 #### The LC shp file must have following fields:
 
->**ID** (object id)
+>**FID** (object id)
 >**roof** (percent)  
 >**road** (percent)  
 >**watr** (percent)  
 >**conc**  (percent)
->**veg** (percent)  
+>**Veg** (percent)  
 >**dry** (percent)  
 >**irr** (percent)  
->**h** (house height)  
->**w** (canyon width)
+>**H** (house height)  
+>**W** (canyon width)
 
 ##### Important
 
