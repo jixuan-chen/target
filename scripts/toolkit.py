@@ -16,11 +16,11 @@ from target.scripts.force_restore import Ts_calc_surf  # force restore calcs (3.
 from target.scripts.simple_water import Ts_EB_W  # simple water body model (3.4 tech notes)
 from target.scripts.ld_mod import ld_mod  # model ldown (appendix tech notes)
 from target.scripts.Ta_module_new import calc_ta  # air temperature module (3.5 tech notes)
-from target.scripts.plotting import val_ts, val_ta  # , gis   # Ash Broadbent's plotting functions
+from target.scripts.plotting import val_ts, val_ta, gis  # , gis   # Ash Broadbent's plotting functions
 from target.scripts.SfcRi import sfc_ri
 from target.scripts.Httc import httc
 from target.scripts.CD import cd
-from target.scripts import TbRurSolver
+from target.scripts import TbRurSolver, UTCI
 
 
 class Target:
@@ -139,16 +139,24 @@ class Target:
                                     index_col=['datetime'])
         # self.met_data = self.met_data.iloc[::3, :]
 
+        # read lat&lon info
+        self.lonResolution = float(self.cfM['lonresolution'])
+        self.latResolution = float(self.cfM['latresolution'])
+        self.lonEdge = float(self.cfM['lonedge'])
+        self.latEdge = float(self.cfM['latedge'])
+
         met_data_all = self.met_data.loc[
                        self.date1A:self.date2]  # main forcing meteorological dataframe (including spin up)
         met_data_all = met_data_all.interpolate(method='time')  # interpolates forcing data
 
-        if self.cfM['mod_ldwn'] == 'Y':
-            for i in range(len(met_data_all)):
-                met_data_all['Ld'][i] = ld_mod(met_data_all.iloc[i])[
-                    'Ld_md']  ## Ld_mod is added to meteorological forcing data frame
+        if not 'Ld' in met_data_all.columns:
+            met_data_all['Ld'] = ld_mod(met_data_all)
+        elif met_data_all['Ld'].isnull().all():
+            met_data_all['Ld'] = ld_mod(met_data_all)
+        elif self.cfM['mod_ldwn'] == 'Y':
+            met_data_all['Ld'] = ld_mod(met_data_all)
 
-        ########## DEFINE MAIN DATAFRAME ####################  dataframe for different modelled variables
+            ########## DEFINE MAIN DATAFRAME ####################  dataframe for different modelled variables
         numberOfVf = 11
         mod_data_ts_ = np.zeros((self.nt, numberOfVf), np.dtype(
             [('roof', '<f8'), ('road', '<f8'), ('watr', '<f8'), ('conc', '<f8'), ('Veg', '<f8'), ('dry', '<f8'),
@@ -181,11 +189,10 @@ class Target:
             [('roof', '<f8'), ('road', '<f8'), ('watr', '<f8'), ('conc', '<f8'), ('Veg', '<f8'), ('dry', '<f8'),
              ('irr', '<f8'), ('wall', '<f8'), ('TSOIL', '<f8'), ('avg', '<f8'), ('date', object)]))
         ## NB: "TSOIL" is the soil temperature below the water layer
-
         mod_rslts = np.zeros((self.nt, len(lc_data), 1), np.dtype(
-            [('ID', np.int32), ('Ws', '<f8'), ('Tb_rur', '<f8'), ('Ta', '<f8'), ('Ts_horz', '<f8'),
-             ('Tac_can_roof', '<f8'), ('roofTsrfT', '<f8'), ('Tacprv', '<f8'), ('Tcorrhi', '<f8'), ('httc', '<f8'),
-             ('Fh', '<f8'), ('httc_can', '<f8'), ('Twall', '<f8'),('date', object)]))  # this is the main data array where surface averaged outputs are stored
+            [('ID', np.int32), ('Ws', '<f8'), ('Ta', '<f8'), ('Ts_horz', '<f8'),
+             ('Tac_can_roof', '<f8'), ('roofTsrfT', '<f8'), ('Tmrt', '<f8'), ('UTCI', '<f8'), ('UTCI_cat', '<f8'),
+             ('date', object)]))  # this is the main data array where surface averaged outputs are stored
         # mod_rslts = np.zeros((self.nt, len(lc_data), 1), np.dtype(
         #     [('ID', np.int32),
         #      ('Ts_roof_frac', '<f8'), ('LC_roof', '<f8'),
@@ -434,39 +441,44 @@ class Target:
                     # def calc_ta(cs, lc_data, grid, i, met_d, z_URef, z_Hx2, Tb_rur, mod_data_ts_, mod_rslts_prev):
                     ta_rslts = calc_ta(self.parameters, lc_data, grid,i, met_d, z_Uref, z_Hx2, Tb_rur, mod_data_ts_,
                                        previousTacValues, httc_rur)  # dictionary for canopy air temperature and wind speed
+
+                    # calculate UTCI
+                    lat = self.latEdge
+
+                    yd_actual = dte.day
+                    TM = dte.hour
+
+                    Tac = ta_rslts['Tac']
+                    if Tac == -999.0:
+                        tmrt = -999.0
+                        utci = {'utci': -999.0, 'cat': -999}
+                    else:
+                        lup = self.parameters['sb'] * ((met_d['Ta'][i] + 273.15) ** 4)
+
+                        tmrt = UTCI.getTmrtForGrid_RH(Tac, met_d['RH'][i], ta_rslts['Ucan'], met_d['Kd'][i],
+                                                      ta_rslts['Ts_can'], met_d['Ld'][i], lup, yd_actual, TM,
+                                                      lat)
+                        utci = UTCI.getUTCIForGrid_RH(Tac, ta_rslts['Ucan'], met_d['RH'][i], tmrt)
+
                     ############################ append everyhing to output table #####
-                    for_tab = (lc_data.loc[grid]['FID'], ta_rslts['Ucan'], Tb_rur, ta_rslts['Tac'],
+                    for_tab = (lc_data.loc[grid]['FID'], ta_rslts['Ucan'], ta_rslts['Tac'],
                                ta_rslts['Ts_horz'], ta_rslts['Tac_can_roof'], ta_rslts['roofTsrfT'],
-                               ta_rslts['Tacprv'], ta_rslts['Tcorrhi'], ta_rslts['httc_urb_new'],
-                               ta_rslts['Fh'], ta_rslts['httc_can'],ta_rslts['Twall'], dte)
-                    # for_tab = (lc_data.loc[grid]['FID'],
-                    #            ta_rslts['Ts_in_frac'][0], ta_rslts['LC'][0],
-                    #            ta_rslts['Ts_in_frac'][1], ta_rslts['LC'][1],
-                    #            ta_rslts['Ts_in_frac'][2], ta_rslts['LC'][2],
-                    #            ta_rslts['Ts_in_frac'][3], ta_rslts['LC'][3],
-                    #            ta_rslts['Ts_in_frac'][4], ta_rslts['LC'][4],
-                    #            ta_rslts['Ts_in_frac'][5], ta_rslts['LC'][5],
-                    #            ta_rslts['Ts_in_frac'][6], ta_rslts['LC'][6],
-                    #            ta_rslts['Ts_in_frac'][7], ta_rslts['LC'][7],
-                    #            dte)
+                               tmrt, utci['utci'], utci['cat'], dte)
+
+                    ############################ append everyhing to output table #####
+                    # for_tab = (lc_data.loc[grid]['FID'], ta_rslts['Ucan'], Tb_rur, ta_rslts['Tac'],
+                    #            ta_rslts['Ts_horz'], ta_rslts['Tac_can_roof'], ta_rslts['roofTsrfT'],
+                    #            ta_rslts['Tacprv'], ta_rslts['Tcorrhi'], ta_rslts['httc_urb_new'],
+                    #            ta_rslts['Fh'], ta_rslts['httc_can'],ta_rslts['Twall'], dte)
+
                     mod_rslts[i][grid] = for_tab  ## append the main data to the main modelled data frame
                     timestepsTacValues.append(float(ta_rslts['Tac']))
 
-                    #
-                # if grid == 0:
-            #     print("Ts_horz=", ta_rslts['Ts_horz'])
-            #     print("Ta=", ta_rslts['Tac'])
-            #     print("httc_urb_new=", ta_rslts['httc_urb_new'])
-            #     print("httc_can=", ta_rslts['httc_can'])
-                # print(mod_data_qh_[ta_rslts['fg']]['irr'], mod_data_qg_[ta_rslts['fg']]['irr'], mod_data_qe_[ta_rslts['fg']]['irr'])
-                # print(mod_data_rn_['irr'])
             previousTacValues.append(timestepsTacValues)
         ##########################################################################################
         self.mod_rslts = mod_rslts[1:]  ### THIS IS THE FINAL DATA ARRAY WITH MODEL OUTPUTS  ######
         ##########################################################################################
         ## defines a director for outputing plot
-
-
         if not os.path.exists(self.OUT_DIR):
             os.makedirs(self.OUT_DIR)
 
