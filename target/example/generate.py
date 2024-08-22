@@ -21,29 +21,26 @@ inpt_met_file={met_file_name}
 #  input land cover data file
 inpt_lc_file={lc_file_name}
 # format of datetime in input met files
-date_fmt=%Y-%m-%d %H:%M:%S
+date_fmt=%d/%m/%Y %H:%M
 # time step (minutes)
-timestep=15
+timestep=30
 
 mod_ldwn=N
 domainDim=32,31
-latEdge=47.3769
-lonEdge=8.5417
-latResolution=0.00090933
-lonResolution=0.00130123
+latEdge=-34.79829
+lonEdge=138.79829
+latResolution=0.00088
+lonResolution=0.00110
 
 #---------------------------------------------------------------------------------------------------------
 # dates
 #---------------------------------------------------------------------------------------------------------
 # year,month,day,hour	#start date for simulation (should be a minimum of 24 hours prior to date1)
-#date1a=2017,6,20,0
-date1a=2023,7,8,0
+date1a=2011,2,14,0	
 # year,month,day,hour	## the date/time for period of interest (i.e. before this will not be saved)
-#date1=2017,6,21,0
-date1=2023,7,9,0
+date1=2011,2,15,0
 # year,month,day,hour	# end date for validation period
-#date2=2017,6,22,0
-date2=2023,7,12,0
+date2=2011,2,16,18
 ######################
 """
 
@@ -54,11 +51,11 @@ inpt_obs_file =   30min_no_grid_obs.csv
 
 radius=25m
  # year,month,day,hour # start date/time for obs Ts data (AWS)
-date1Ts1=2017,6,20,0
+date1Ts1=2011,2,16,14
 # year,month,day,hour # end   date/time for obs Ts data (AWS)
-date1Ts2=2017,6,21,0
+date1Ts2=2011,2,16,16
 # year,month,day,hour # start date/time for obs Ts data (AWS) 
-date2Ts1=2017,2,15,2
+date2Ts1=2011,2,15,2
 # year,month,day,hour # end   date/time for obs Ts data (AWS)
 date2Ts2=2011,2,15,3
 # names for Ts test periods
@@ -451,8 +448,8 @@ def generate_example(
             full_path,
             site_name=site_name,
             run_name=run_name,
-            lc_file_name="InnerZurich_LC_test.csv",
-            met_file_name="SMA_2023_15min.csv"
+            lc_file_name="{MY_LC_FILE.csv}",
+            met_file_name="{MY_MET_FILE.csv}"
         )
 
         write_conf(
