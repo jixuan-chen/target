@@ -1,4 +1,4 @@
-from sympy import solve, Eq, Symbol
+#from sympy import solve, Eq, Symbol
 
 
 error_return = -9999
@@ -165,8 +165,8 @@ def calculateExpression(dz, ref_ta, UTb, mod_U_TaRef, Ri_rur, Thi_tb):
     return expressionValue
 
 
-def pythonsolver(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur):
-    Thi_tb = Symbol('Thi_tb')
-    Tb_rur = solve(9.806 * dz * (Thi_tb - ref_ta) * 2.0 / (Thi_tb + ref_ta) / (UTb - mod_U_TaRef[i]) ** 2.0 - Ri_rur,
-                   Thi_tb)[0]
-    return Tb_rur
+#def pythonsolver(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur):
+#    Thi_tb = Symbol('Thi_tb')
+#    Tb_rur = solve(9.806 * dz * (Thi_tb - ref_ta) * 2.0 / (Thi_tb + ref_ta) / (UTb - mod_U_TaRef[i]) ** 2.0 - Ri_rur,
+#                   Thi_tb)[0]
+#    return Tb_rur

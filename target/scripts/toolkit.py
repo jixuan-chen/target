@@ -327,20 +327,20 @@ class Target:
                 dz  = z_Hx2 - z_TaRef
                 dz = max(dz, 0.01)
 
-                # Tb_rur = TbRurSolver.convergeNewVersion(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur)
-                Tb_rur = TbRurSolver.pythonsolver(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur)
+                Tb_rur = TbRurSolver.convergeNewVersion(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur)
+                # Tb_rur = TbRurSolver.pythonsolver(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur)
                 if Tb_rur == TbRurSolver.error_return or Tb_rur == 0.0:
                     print("Error with Tb_rur, returned value = " + str(Tb_rur))
                     # print("Called with " + i + " " + dz + " " + ref_ta + " " + UTb + " " + mod_U_TaRef[i] + " " + Ri_rur)
                     Tb_rur = Tb_rur_prev
                     print('using previous Tb_rur = ' + str(Tb_rur_prev))
 
-                    try:
-                        returnValue = TbRurSolver.pythonsolver(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur)
-                        print('Trying python version=' + str(returnValue))
-                        Tb_rur = returnValue
-                    except Exception as e:
-                        print(e)
+                    # try:
+                    #     returnValue = TbRurSolver.pythonsolver(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur)
+                    #     print('Trying python version=' + str(returnValue))
+                    #     Tb_rur = returnValue
+                    # except Exception as e:
+                    #     print(e)
 
                 Tb_rur = Tb_rur - 9.806 / 1004.67 * dz
 
