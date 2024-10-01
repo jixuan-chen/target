@@ -1,23 +1,28 @@
 def lc_sort(cs, LC, H, W):
     # LC = [lc_data['roof'][grid], lc_data['road'][grid], lc_data['watr'][grid], lc_data['conc'][grid],
           # lc_data['Veg'][grid], lc_data['dry'][grid], lc_data['irr'][grid]]
-    LC_canyon = LC[:]
 
-    res = W*sum(LC)/(sum(LC) - LC[0])
-    # res = cs['res']
+    LC_canyon = LC.copy()
 
     if W < 1.0:
         W = 1.0
 
+    # res = W*sum(LC)/(sum(LC) - LC[0])
+    res = cs['res']
+
     tree_area = res ** 2 * LC[4]
     tree_width = tree_area / res
 
-    Wtree = W - tree_width
+    Wtree = W - tree_width / (res * (1 - LC[0]) / W)
+
+    n = divmod(res * (sum(LC) - LC[0]) / sum(LC), W)[0]
+
+    wall_area = 4 * LC[0] * H * (n + 1) / res
 
     if Wtree <= 1.0:
         Wtree = 1.0
-    if H <= 1.5:
-        H = 1.5
+    if H <= 1.0:
+        H = 1.0
 
     LCgrndSum = LC[1] + LC[2] + LC[3] + LC[5] + LC[6]
 
@@ -30,28 +35,16 @@ def lc_sort(cs, LC, H, W):
     else:
         LC[3] = LC[3] + LC[4]
 
-    LC_woRoofAvg = LC[:]
+    LC_woRoofAvg = LC.copy()
 
-    f_roof = LC[0]
-    if f_roof == 0:
-        f_roof = 0.000000001
-    f_wall = 2 * (H / W) * (1 - f_roof)
-    f_roof_tree = f_roof / (1 - LC[4])
-    f_wall_tree = 2 * (H / W) * (1 - f_roof)/ (1 - LC[4])
+    svfgA = (1 + (H / Wtree) ** 2) ** 0.5 - H / Wtree
+    svfwA = 1 / 2 * (1 + W / H - (1 + ((W / H) ** 2)) ** 0.5)
 
-    H2W = (f_roof * f_wall) / (2 * f_roof * (1 - f_roof))
-    H2W_tree = (f_roof_tree * f_wall_tree) / (2 * f_roof_tree * (1 - f_roof_tree))
+    horz_area = res * res
+    # wall_area = 2 * (H/W) * (1 - LC[0])
 
-    svfgA = (1 + (H2W_tree) ** 2) ** 0.5 - H2W_tree
-    svfwA = 1/2 * (1 + 1/H2W - (1 + ((1/H2W) ** 2)) ** 0.5)
-
-    # svfgA = (1 + (H / Wtree) ** 2) ** 0.5 - H / Wtree
-    # svfwA = 1 / 2 * (1 + W / H - (1 + ((W / H) ** 2)) ** 0.5)
-
-    wall_area = 2 * (H/W) * (1 - LC[0])
-
-    LC_woRoofAvgN = LC[:]
-    LC_wRoofAvg = LC[:]
+    LC_woRoofAvgN = LC.copy()
+    LC_wRoofAvg = LC.copy()
 
     LC.append(wall_area)
 
@@ -102,9 +95,6 @@ def lc_sort(cs, LC, H, W):
 
         value = LC_wRoofAvg[6]
         LC_wRoofAvg[6] = value / LC_wRoofAvgSum
-
-    fg = 0
-    fw = 0
 
     if svfgA < 0.1:
         fg = 0
