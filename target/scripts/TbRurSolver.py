@@ -64,13 +64,14 @@ def converge(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur):
 def convergeNewVersion(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur):
     lowestNegativeTestResult = -99999.
     lowestPositiveTestResult = 99999.
-    previousNegativeTestValue = 0
-    previousPositiveTestValue = 100
+    previousNegativeTestValue = -3000
+    previousPositiveTestValue = 3000
     testValue = 18.0
     converged = False
 
     count = 0
     while count < iterations:
+        testValueDifference = previousNegativeTestValue - previousPositiveTestValue
         testValue = (previousNegativeTestValue + previousPositiveTestValue) / 2
         count += 1
 
@@ -79,7 +80,6 @@ def convergeNewVersion(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur):
             converged = True
             break
 
-        testValueDifference = previousNegativeTestValue - previousPositiveTestValue
         if returnValue < 0:
             if returnValue > lowestNegativeTestResult:
                 lowestNegativeTestResult = returnValue
@@ -97,7 +97,7 @@ def convergeNewVersion(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur):
         return testValue
     else:
         print('Error result='+str(testValue)+" iterations="+str(count))
-        return(converge(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur))
+        return converge(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur)
 
 
 def getAlternativeIncrement(returnValue, testValue, scaleIncrement, Ri_rur):
@@ -160,8 +160,9 @@ def getAlternativeIncrement(returnValue, testValue, scaleIncrement, Ri_rur):
         newTestValue = testValue + scaleIncrement * 0.0000000001
     return  newTestValue
 
+
 def calculateExpression(dz, ref_ta, UTb, mod_U_TaRef, Ri_rur, Thi_tb):
-    expressionValue = 9.806 * dz * (Thi_tb - ref_ta) * 2 / (Thi_tb + ref_ta) / ((UTb - mod_U_TaRef) ** 2) - Ri_rur
+    expressionValue = 9.806 * dz * (Thi_tb - ref_ta) * 2.0 / (Thi_tb + ref_ta) / (UTb - mod_U_TaRef) ** 2.0 - Ri_rur
     return expressionValue
 
 

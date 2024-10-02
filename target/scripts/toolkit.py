@@ -129,15 +129,23 @@ class Target:
 
             # lc_data['H'][0] = paras[22]
 
-        maxH = max(lc_data['H'])
-        self.parameters['zavg'] = np.mean(lc_data['H'])
+        # if W is not in the input LC file, W is calculated as (cell size *  (1 - roof fraction))
+        if not 'W' in lc_data.columns:
+            lc_data['W'] = self.parameters['res'] * (1 - lc_data['roof'])
+        elif lc_data['W'].isnull().all():
+            lc_data['W'] = self.parameters['res'] * (1 - lc_data['roof'])
+
+        zavg = self.parameters['zavg']
+        if "zavg" in self.cfM.keys():
+            zavg = float(self.cfM['zavg'])
+        maxH = max(max(lc_data['H']), zavg)
+        maxW = max(lc_data['W'])
 
         ########## DEFINE INPUT MET FILE LOCATION HERE #######
         # input meteorological forcing data file
         # convert to data frame
         self.met_data = pd.read_csv(self.MET_FILE, parse_dates=['datetime'], date_parser=self.dateparse,
                                     index_col=['datetime'])
-        # self.met_data = self.met_data.iloc[::3, :]
 
         # read lat&lon info
         self.lonResolution = float(self.cfM['lonresolution'])
@@ -149,6 +157,7 @@ class Target:
                        self.date1A:self.date2]  # main forcing meteorological dataframe (including spin up)
         met_data_all = met_data_all.interpolate(method='time')  # interpolates forcing data
 
+        # if no longwave radiation is provided in the input, or if user wishes, Ld is modelled by TARGET ld_mod
         if not 'Ld' in met_data_all.columns:
             met_data_all['Ld'] = ld_mod(met_data_all)
         elif met_data_all['Ld'].isnull().all():
@@ -156,7 +165,7 @@ class Target:
         elif self.cfM['mod_ldwn'] == 'Y':
             met_data_all['Ld'] = ld_mod(met_data_all)
 
-            ########## DEFINE MAIN DATAFRAME ####################  dataframe for different modelled variables
+        ########## DEFINE MAIN DATAFRAME ####################  dataframe for different modelled variables
         numberOfVf = 11
         mod_data_ts_ = np.zeros((self.nt, numberOfVf), np.dtype(
             [('roof', '<f8'), ('road', '<f8'), ('watr', '<f8'), ('conc', '<f8'), ('Veg', '<f8'), ('dry', '<f8'),
@@ -192,18 +201,8 @@ class Target:
         mod_rslts = np.zeros((self.nt, len(lc_data), 1), np.dtype(
             [('ID', np.int32), ('Ws', '<f8'), ('Ta', '<f8'), ('Ts_horz', '<f8'),
              ('Tac_can_roof', '<f8'), ('roofTsrfT', '<f8'), ('Tmrt', '<f8'), ('UTCI', '<f8'), ('UTCI_cat', '<f8'),
-             ('date', object)]))  # this is the main data array where surface averaged outputs are stored
-        # mod_rslts = np.zeros((self.nt, len(lc_data), 1), np.dtype(
-        #     [('ID', np.int32),
-        #      ('Ts_roof_frac', '<f8'), ('LC_roof', '<f8'),
-        #      ('Ts_road_frac', '<f8'), ('LC_road', '<f8'),
-        #      ('Ts_watr_frac', '<f8'), ('LC_watr', '<f8'),
-        #      ('Ts_conc_frac', '<f8'), ('LC_conc', '<f8'),
-        #      ('Ts_veg_frac', '<f8'), ('LC_veg', '<f8'),
-        #      ('Ts_dry_frac', '<f8'), ('LC_dry', '<f8'),
-        #      ('Ts_irr_frac', '<f8'), ('LC_irr', '<f8'),
-        #      ('Ts_wall_frac', '<f8'), ('LC_wall', '<f8'),
-        #      ('date', object)]))
+             ('httc_urb_new', '<f8'), ('Tb_rur', '<f8'), ('date', object)]))  # this is the main data array where surface averaged outputs are stored
+
         self.stations = lc_data['FID'].values
 
         mod_fm = np.zeros(self.nt)
@@ -225,6 +224,12 @@ class Target:
                 ref_surf1 = 'dry'
                 ref_surf2 = 'conc'
 
+                # override these values if they are in the control file
+                if 'ref_surf1' in self.cfM.keys():
+                    ref_surf1 = self.cfM['ref_surf1']
+                if 'ref_surf2' in self.cfM.keys():
+                    ref_surf2 = self.cfM['ref_surf2']
+
                 ## radiation balance
                 prevTsRef1 = []
                 prevTsRef2 = []
@@ -238,32 +243,32 @@ class Target:
                     prevTsRef2.append(0)
                     prevTsRef2.append(0)
                 elif i < 2:
-                    prevTsRef1.append(mod_data_ts_[i - 1][9]['dry'])
+                    prevTsRef1.append(mod_data_ts_[i - 1][9][ref_surf1])
                     prevTsRef1.append(0)
                     prevTsRef1.append(0)
 
-                    prevTsRef2.append(mod_data_ts_[i - 1][9]['conc'])
+                    prevTsRef2.append(mod_data_ts_[i - 1][9][ref_surf2])
                     prevTsRef2.append(0)
                     prevTsRef2.append(0)
                 elif i < 3:
-                    prevTsRef1.append(mod_data_ts_[i - 1][9]['dry'])
-                    prevTsRef1.append(mod_data_ts_[i - 2][9]['dry'])
+                    prevTsRef1.append(mod_data_ts_[i - 1][9][ref_surf1])
+                    prevTsRef1.append(mod_data_ts_[i - 2][9][ref_surf1])
                     prevTsRef1.append(0)
 
-                    prevTsRef2.append(mod_data_ts_[i - 1][9]['conc'])
-                    prevTsRef2.append(mod_data_ts_[i - 2][9]['conc'])
+                    prevTsRef2.append(mod_data_ts_[i - 1][9][ref_surf2])
+                    prevTsRef2.append(mod_data_ts_[i - 2][9][ref_surf2])
                     prevTsRef2.append(0)
                 else:
-                    prevTsRef1.append(mod_data_ts_[i - 1][9]['dry'])
-                    prevTsRef1.append(mod_data_ts_[i - 2][9]['dry'])
-                    prevTsRef1.append(mod_data_ts_[i - 3][9]['dry'])
+                    prevTsRef1.append(mod_data_ts_[i - 1][9][ref_surf1])
+                    prevTsRef1.append(mod_data_ts_[i - 2][9][ref_surf1])
+                    prevTsRef1.append(mod_data_ts_[i - 3][9][ref_surf1])
 
-                    prevTsRef2.append(mod_data_ts_[i - 1][9]['conc'])
-                    prevTsRef2.append(mod_data_ts_[i - 2][9]['conc'])
-                    prevTsRef2.append(mod_data_ts_[i - 3][9]['conc'])
+                    prevTsRef2.append(mod_data_ts_[i - 1][9][ref_surf2])
+                    prevTsRef2.append(mod_data_ts_[i - 2][9][ref_surf2])
+                    prevTsRef2.append(mod_data_ts_[i - 3][9][ref_surf2])
 
-                rad_rur1 = rn_calc(self.parameters, self.cfM, met_d, ref_surf1, self.Dats, prevTsRef1, i, 1.0)
-                rad_rur2 = rn_calc(self.parameters, self.cfM, met_d, ref_surf2, self.Dats, prevTsRef2, i, 1.0)
+                rad_rur1 = rn_calc(self.parameters, met_d, ref_surf1, self.Dats, prevTsRef1, i, 1.0)
+                rad_rur2 = rn_calc(self.parameters, met_d, ref_surf2, self.Dats, prevTsRef2, i, 1.0)
                 #################ENG BALANCE for "reference" site ######################
                 eng_bals_rur1 = LUMPS(rad_rur1, self.parameters, self.cfM, met_d, ref_surf1, self.Dats, i)
                 eng_bals_rur2 = LUMPS(rad_rur2, self.parameters, self.cfM, met_d, ref_surf2, self.Dats, i)
@@ -274,30 +279,38 @@ class Target:
                     prevTmRefForce1.append(0)
                     prevTmRefForce2.append(0)
                 else:
-                    prevTmRefForce1.append(mod_data_tm_[i - 1][9]['dry'])
-                    prevTmRefForce2.append(mod_data_tm_[i - 1][9]['conc'])
+                    prevTmRefForce1.append(mod_data_tm_[i - 1][9][ref_surf1])
+                    prevTmRefForce2.append(mod_data_tm_[i - 1][9][ref_surf2])
                 Ts_stfs_rur1 = Ts_calc_surf(eng_bals_rur1, self.parameters, self.cfM, prevTsRef1, prevTmRefForce1,
                                             self.Dats, ref_surf1, i)
                 Ts_stfs_rur2 = Ts_calc_surf(eng_bals_rur2, self.parameters, self.cfM, prevTsRef2, prevTmRefForce2,
                                             self.Dats, ref_surf2, i)
-                Ts_stfs_rur = Ts_stfs_rur1['TS']
-                # Ts_stfs_rur = Ts_stfs_rur2['TS']
+                # Ts_stfs_rur = Ts_stfs_rur1['TS']
+                Ts_stfs_rur = Ts_stfs_rur2['TS']
                 ### these are the parameters for calculating Tb_rur and httc_rur - may need to add a method for calculating these from
-                #   canopy displacement height (m)
-                dcan_rur = 0.01
                 #   Roughness length for momentum (m)
-                z0m_rur = 0.45
+                if 'z0m_rur' in self.cfM.keys():
+                    z0m_rur = self.cfM['z0m_rur']
+                else:
+                    z0m_rur = 0.45
                 #   Roughness length for heat (m)
-                z0h_rur = z0m_rur/10.
+                z0h_rur = z0m_rur / 10
 
-                # z_Hx3 = maxH * 3.0
+                # height of Tb (2 x max building height) - this is the secondary height used for Tb above canyon
                 z_Hx2 = maxH * 2.0
-
-                z_TaRef = self.parameters['z_TaRef'] # height of air temperature measurements (usually 2 m)
-                z_Uref = self.parameters['z_URef'] # height of reference wind speed measurement (usually 10 m)
-
-                Tlow_surf = Ts_stfs_rur     # surface temperature at rural (reference) site
-
+                # height of air temperature measurements (usually 2 m)
+                z_TaRef = self.parameters['z_TaRef']
+                # override the value if it is in the control file
+                if 'z_TaRef' in self.cfM.keys():
+                    z_TaRef = self.cfM['z_TaRef']
+                # height of reference wind speed measurement (usually 10 m)
+                z_Uref = self.parameters['z_URef']
+                # override the value if it is in the control file
+                if 'z_URef' in self.cfM.keys():
+                    z_Uref = self.cfM['z_URef']
+                # surface temperature at rural (reference) site
+                Tlow_surf = Ts_stfs_rur
+                # observed air temperature
                 ref_ta = met_d['Ta'][i]
 
                 ####### DEFINE REFERENCE WIND SPEED RURAL ########
@@ -316,31 +329,22 @@ class Target:
 
                 ###### calculate cd, fm, ustar used for calculating wind speed
                 cd_out = cd(Ri_rur, z_TaRef-z0m_rur, z0m_rur, z0h_rur)
-                modFmI = cd_out['Fm']
-                mod_fm[i] = modFmI
-                modCdI = cd_out['cd_out']
-                mod_cd[i] = modCdI
+                mod_fm[i] = cd_out['Fm']
+                mod_cd[i] = cd_out['cd_out']
                 ustar = math.sqrt(mod_cd[i]) * max(mod_U_TaRef[i], 0.1)
-                UTb = max(ustar/(self.parameters['karman'])*math.log(z_Hx2/z0m_rur)/math.sqrt(mod_fm[i]), 0.1)
+                UTb = max(ustar / self.parameters['karman'] * math.log(z_Hx2 / z0m_rur) / math.sqrt(mod_fm[i]), 0.1)
 
                 ###### Solve Richardson's number eq for "high temperature" aka Tb_rur
-                dz  = z_Hx2 - z_TaRef
+                dz = z_Hx2 - z_TaRef
                 dz = max(dz, 0.01)
 
                 Tb_rur = TbRurSolver.convergeNewVersion(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur)
                 # Tb_rur = TbRurSolver.pythonsolver(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur)
                 if Tb_rur == TbRurSolver.error_return or Tb_rur == 0.0:
                     print("Error with Tb_rur, returned value = " + str(Tb_rur))
-                    # print("Called with " + i + " " + dz + " " + ref_ta + " " + UTb + " " + mod_U_TaRef[i] + " " + Ri_rur)
+                    print("Called with " + i + " " + dz + " " + ref_ta + " " + UTb + " " + mod_U_TaRef[i] + " " + Ri_rur)
                     Tb_rur = Tb_rur_prev
                     print('using previous Tb_rur = ' + str(Tb_rur_prev))
-
-                    # try:
-                    #     returnValue = TbRurSolver.pythonsolver(dz, ref_ta, UTb, mod_U_TaRef, i, Ri_rur)
-                    #     print('Trying python version=' + str(returnValue))
-                    #     Tb_rur = returnValue
-                    # except Exception as e:
-                    #     print(e)
 
                 Tb_rur = Tb_rur - 9.806 / 1004.67 * dz
 
@@ -373,10 +377,10 @@ class Target:
                             else:
                                 prevTmRefForce.append(mod_data_tm_[i - 1][9][surf])
 
-                            rad = rn_calc(self.parameters, self.cfM, met_d, surf, self.Dats, prevTsRef, i, svfg)
+                            rad = rn_calc(self.parameters, met_d, surf, self.Dats, prevTsRef, i, svfg)
                             eng_bals = LUMPS(rad, self.parameters, self.cfM, met_d, surf, self.Dats, i)
-                            Ts_stfs = Ts_calc_surf(eng_bals, self.parameters, self.cfM, prevTsRef, prevTmRefForce, self.Dats,
-                                                   surf, i)
+                            Ts_stfs = Ts_calc_surf(eng_bals, self.parameters, self.cfM, prevTsRef, prevTmRefForce,
+                                                   self.Dats, surf, i)
 
                             mod_data_ts_[i][vf][surf] = Ts_stfs['TS']
                             mod_data_tm_[i][vf][surf] = Ts_stfs['TM']
@@ -384,10 +388,10 @@ class Target:
                             mod_data_qe_[vf][surf] = eng_bals['Qe']
                             mod_data_qg_[vf][surf] = eng_bals['Qg']
                             mod_data_rn_[vf][surf] = rad['Rn']
-                            mod_data_kd_[vf][surf] = rad['Kd']
-                            mod_data_ku_[vf][surf] = rad['Ku']
-                            mod_data_ld_[vf][surf] = rad['Ld']
-                            mod_data_lu_[vf][surf] = rad['Lu']
+                            # mod_data_kd_[vf][surf] = rad['Kd']
+                            # mod_data_ku_[vf][surf] = rad['Ku']
+                            # mod_data_ld_[vf][surf] = rad['Ld']
+                            # mod_data_lu_[vf][surf] = rad['Lu']
 
                             # if surf == 'irr':
                             #     print("Qh ", eng_bals['Qh'])
@@ -413,9 +417,9 @@ class Target:
                                 prevTsRef.append(mod_data_ts_[i - 2][9][surf])
                                 prevTsRef.append(mod_data_ts_[i - 3][9][surf])
 
-                            rad = rn_calc(self.parameters, self.cfM, met_d, surf, self.Dats, prevTsRef, i, svfg)
-                            wtr_stf = Ts_EB_W(met_d, self.parameters, self.cfM, mod_data_ts_, mod_data_tm_, self.Dats, i,
-                                              rad, vf)
+                            rad = rn_calc(self.parameters, met_d, surf, self.Dats, prevTsRef, i, svfg)
+                            wtr_stf = Ts_EB_W(met_d, self.parameters, self.cfM, mod_data_ts_, mod_data_tm_, self.Dats,
+                                              i, rad, vf)
 
                             mod_data_ts_[i][vf][surf] = wtr_stf['TsW']
                             mod_data_tm_[i][vf][surf] = wtr_stf['TM']
@@ -424,22 +428,19 @@ class Target:
                             mod_data_qe_[vf][surf] = wtr_stf['QeW']
                             mod_data_qg_[vf][surf] = wtr_stf['QgW']
                             mod_data_rn_[vf][surf] = rad['Rn']
-                            mod_data_kd_[vf][surf] = rad['Kd']
-                            mod_data_ku_[vf][surf] = rad['Ku']
-                            mod_data_ld_[vf][surf] = rad['Ld']
-                            mod_data_lu_[vf][surf] = rad['Lu']
-
+                            # mod_data_kd_[vf][surf] = rad['Kd']
+                            # mod_data_ku_[vf][surf] = rad['Ku']
+                            # mod_data_ld_[vf][surf] = rad['Ld']
+                            # mod_data_lu_[vf][surf] = rad['Lu']
 
                     vf += 1
 
-                # counter = -1
                 timestepsTacValues = []
 
                 for grid in range(0, len(lc_data)):  # now cycle through each grid point
                     # counter += 1
                     ##################### CALC air temperature ########################
-                    # def calc_ta(cs, lc_data, grid, i, met_d, z_URef, z_Hx2, Tb_rur, mod_data_ts_, mod_rslts_prev):
-                    ta_rslts = calc_ta(self.parameters, lc_data, grid,i, met_d, z_Uref, z_Hx2, Tb_rur, mod_data_ts_,
+                    ta_rslts = calc_ta(self.parameters, self.cfM, lc_data, grid, i, met_d, z_Uref, z_Hx2, Tb_rur, mod_data_ts_,
                                        previousTacValues, httc_rur)  # dictionary for canopy air temperature and wind speed
 
                     # calculate UTCI
@@ -463,7 +464,7 @@ class Target:
                     ############################ append everyhing to output table #####
                     for_tab = (lc_data.loc[grid]['FID'], ta_rslts['Ucan'], ta_rslts['Tac'],
                                ta_rslts['Ts_horz'], ta_rslts['Tac_can_roof'], ta_rslts['roofTsrfT'],
-                               tmrt, utci['utci'], utci['cat'], dte)
+                               tmrt, utci['utci'], utci['cat'], ta_rslts['httc_urb_new'], Tb_rur, dte)
 
                     ############################ append everyhing to output table #####
                     # for_tab = (lc_data.loc[grid]['FID'], ta_rslts['Ucan'], Tb_rur, ta_rslts['Tac'],

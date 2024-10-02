@@ -26,23 +26,24 @@ from datetime import timedelta
 
 def Ts_calc_surf(eng_bal, cs, cfM, mod_ts, mod_tm, Dats, surf, i):
     if Dats['dte'] <= Dats['date1A'] + timedelta(minutes=(2 * int(cfM['timestep']))):
+        tS = float(cs['Ts'][surf])  # initial conditions for Tsurf
+        tM = float(cs['Tm'][surf])  # initial conditions for Tm
 
-        tS = float(cs['Ts'][surf])  ## intial conditions for Tsurf
-        tM = float(cs['Tm'][surf])  ## intial conditions for Tm
     else:
-        QGS = eng_bal['Qg']  ## calculate ground heat flux
+        # calculate ground heat flux
+        QGS = eng_bal['Qg']
+        # the damping depth for the annual temperature cycle
+        D = math.sqrt((2 * cs['K'][surf]) / ((2 * math.pi) / 86400))
+        Dy = D * math.sqrt(365)
 
-        D = math.sqrt(
-            (2 * cs['K'][surf]) / ((2 * math.pi) / 86400.))  # the damping depth for the annual temperature cycle
-        Dy = D * math.sqrt(365.)
+        # change in Tsurf per second
+        delta_Tg = 2 / (cs['C'][surf] * D) * QGS - (2 * math.pi / 86400) * (mod_ts[0] - mod_tm[0])
+        # change in Tm per second
+        delta_Tm = QGS / (cs['C'][surf] * Dy)
 
-        delta_Tg = ((2 / (cs['C'][surf] * D) * QGS)) - (((2 * math.pi) / 86400.) * (
-                    mod_ts[0] - mod_tm[0]))  ## the change in Tsurf per second
-        delta_Tm = QGS / (cs['C'][surf] * Dy)  ## change in Tm per second
-
-        tM = mod_tm[0] + (
-                    delta_Tm * int(cfM['timestep']) * 60.)  # update Tm (3600. seconds in an hour timestep)
-        tS = mod_ts[0] + (
-                    delta_Tg * int(cfM['timestep']) * 60.)  # update Tsurf (3600. seconds in an hour timestep)
+        # update Tm (60 seconds in a minute timestep)
+        tM = mod_tm[0] + (delta_Tm * int(cfM['timestep']) * 60)
+        # update Tsurf (3600. seconds in an hour timestep)
+        tS = mod_ts[0] + (delta_Tg * int(cfM['timestep']) * 60)
 
     return {'TS': tS, 'TM': tM}
