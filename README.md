@@ -4,8 +4,8 @@ Target stands for The Air-temperature Response to Green/blue-infrastructure Eval
 
 ### Git
 ```sh 
-git clone https://gitlab.ethz.ch/chenjix/target-v1.0.git
-pip install target-v1.0/
+git clone https://github.com/jixuan-chen/target.git
+pip install target
 ```
 
 
@@ -151,7 +151,8 @@ File names for each input file are defined the in control file.
 >**WS** (wind speed in ms-1)  
 >**P**  (pressure in hPa)
 >**Kd** (incoming shortwave Wm-2)  
->**Ld** (incoming longwave Wm-2)  
+
+>(optional) **Ld** (incoming longwave Wm-2) - can be modelled if this data is unavailable, by including "mod_Ld=Y" in the config file.
 
 The land cover data must have the fraction of each land cover type and building heights and street widths (m) (keep headers the same as example). The “FID” is the identifier for each point – this can be stations numbers (as in the Mawson_stations eg) or grid cells. In the case of the Mawson grid, the FID values correspond to a grid shape file (.shp), so output can easily mapped to a GIS grid. 
 
@@ -165,14 +166,13 @@ This can be read with `numpy.load`
 The array has the following cols:
 
 >**ID** – same as FID
->**Ws** – wind speed     
->**Ts** – surface temperature  
+>**Ws** – wind speed
 >**Ta** – canyon air temperature  
->**Rn** net radiation  
->**Qg** -storage flux  
->**Qe** – latent heat flux  
->**Qh** - sensible heat flux  
->**date** – datetime object  
+>**Ts_horz** – surface temperature  
+>**Tmrt** mean radiant temperature
+>**UTCI** - universal thermal comfort index (Celsius degrees)
+>**UTCI_cat** – universal thermal comfort index (category) 
+>**date** – datetime object
 
 You can index the array to desired ID and/or times and then output the variables. I'm sure there is a better way to this... but that is that at the moment. 
 
@@ -188,8 +188,8 @@ You can index the array to desired ID and/or times and then output the variables
 >**dry** (percent)  
 >**irr** (percent)  
 >**H** (house height)  
->**W** (canyon width)
+>**W** (canyon width) - strongly recommended to include, otherwise the model can calculate it as the grid resolution * (1 - roof fraction)
 
 ##### Important
 
-*W (canyon width) my not be 0!*
+*W (canyon width) may not be 0!*
