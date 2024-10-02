@@ -152,7 +152,7 @@ File names for each input file are defined the in control file.
 >**P**  (pressure in hPa)
 >**Kd** (incoming shortwave Wm-2)  
 
->(optional)**Ld** (incoming longwave Wm-2) - can be modelled if this data is unavailable, by including "mod_Ld=Y" in the config file.
+>(optional) **Ld** (incoming longwave Wm-2) - can be modelled if this data is unavailable, by including "mod_Ld=Y" in the config file.
 
 The land cover data must have the fraction of each land cover type and building heights and street widths (m) (keep headers the same as example). The “FID” is the identifier for each point – this can be stations numbers (as in the Mawson_stations eg) or grid cells. In the case of the Mawson grid, the FID values correspond to a grid shape file (.shp), so output can easily mapped to a GIS grid. 
 
