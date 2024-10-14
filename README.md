@@ -2,29 +2,17 @@
 Target stands for The Air-temperature Response to Green/blue-infrastructure Evaluation Tool. Check out the [publication](https://www.geosci-model-dev.net/12/785/2019/gmd-12-785-2019.html).
 ## Installation
 
-### Git
 ```sh 
-git clone https://github.com/jixuan-chen/target.git
-pip install target
+pip install target-py
 ```
-
-
-### No Git
-
-Download the repository. Unpack the downloaded repo and then install the package via pip.
-```sh
-pip install <path-to-unpacked-repo>
-```
-Use `./` as `<path-to-unpacked-repo>`, if your terminal's working directory is the unpacked target folder.
-
 
 ## Usage
 
 ### Option 1 - via Python
 
 ```python
-from target import Target
-from target import generate_example
+from target_py import Target
+from target_py import generate_example
 import os
 
 # generate example input data your home directory
@@ -60,23 +48,23 @@ tar.save_simulation_parameters()
 
 Get the command line interface's help:
 ```sh
-python -m target --help
+python -m target_py --help
 ```
 Two possible tasks are available `run` and `gen`.
 You might want to check out their help sections:
 ```sh 
-python -m target run --help
-python -m target gen --help
+python -m target_py run --help
+python -m target_py gen --help
 ```
 
 Generate an example:
 ```sh
-python -m target gen -p "your-desired-path" --site my_site --run my_run_name
+python -m target_py gen -p "your-desired-path" --site my_site --run my_run_name
 ```
 
 You can also generate an 'empty' example, which will only create the folder structure, configuration file and parameters file:
 ```sh
-python -m target gen -p "your-desired-path" --empty --site my_new_site --run my_run_name
+python -m target_py gen -p "your-desired-path" --empty --site my_new_site --run my_run_name
 ```
 
 **Run the model:**
@@ -84,7 +72,7 @@ python -m target gen -p "your-desired-path" --empty --site my_new_site --run my_
  - showing a progress bar during simulation `-p`
  - saving output in csv files `--save-csv`
 ```sh
-python -m target run -c "path-to-ini-file"  -p --save-csv
+python -m target_py run -c "path-to-ini-file"  -p --save-csv
 ```
 
 ## Tips - Parameters

@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 def main():
 
     parser = ArgumentParser(
-        prog="target",
+        prog="target_py",
         description="The Air-temperature Response to Green/blue-infrastructure Evaluation Tool: an efficient and user-friendly model of city cooling! "
                     "Note that you should not use --generate-example in connection with any other flag."
     )
