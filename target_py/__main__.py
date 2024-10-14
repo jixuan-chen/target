@@ -1,4 +1,4 @@
-from ui.argparse import main
+from .ui.argparse import main
 
 parser = main()
 args = parser.parse_args()

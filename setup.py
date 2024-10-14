@@ -9,7 +9,7 @@ def parse_requirements(filename):
 
 setup(
     name="target-py",
-    version="0.1.8",
+    version="0.1.9",
     author="Jixuan Chen",
     author_email="jixuan.chen@eawag.ch",
     description="Python version of the air temperature response to green/blue infrastructure evaluation tool (TARGET)",
