@@ -1,2 +1,2 @@
-from target.example.generate import generate_example
-from target.scripts.toolkit import Target
+from .example import generate_example
+from .scripts import Target

@@ -6,21 +6,22 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-from target.ui.utils import read_config, load_json, npy_to_csv
-from target.ui.logger import LOG
+from ..ui.utils import read_config, load_json, npy_to_csv
+from ..ui.logger import LOG
 
 ################## functions used by the code
-from target.scripts.rn_calc import rn_calc  # net radiation calcs  (3.1 tech notes)
-from target.scripts.LUMPS import LUMPS  # energy balance calcs (3.2 tech notes)
-from target.scripts.force_restore import Ts_calc_surf  # force restore calcs (3.3 tech notes)
-from target.scripts.simple_water import Ts_EB_W  # simple water body model (3.4 tech notes)
-from target.scripts.ld_mod import ld_mod  # model ldown (appendix tech notes)
-from target.scripts.Ta_module_new import calc_ta  # air temperature module (3.5 tech notes)
-from target.scripts.plotting import val_ts, val_ta, gis  # , gis   # Ash Broadbent's plotting functions
-from target.scripts.SfcRi import sfc_ri
-from target.scripts.Httc import httc
-from target.scripts.CD import cd
-from target.scripts import TbRurSolver, UTCI
+from ..scripts.rn_calc import rn_calc  # net radiation calcs  (3.1 tech notes)
+from ..scripts.LUMPS import LUMPS  # energy balance calcs (3.2 tech notes)
+from ..scripts.force_restore import Ts_calc_surf  # force restore calcs (3.3 tech notes)
+from ..scripts.simple_water import Ts_EB_W  # simple water body model (3.4 tech notes)
+from ..scripts.ld_mod import ld_mod  # model ldown (appendix tech notes)
+from ..scripts.Ta_module_new import calc_ta  # air temperature module (3.5 tech notes)
+from ..scripts.plotting import val_ts, val_ta, gis  # , gis   # Ash Broadbent's plotting functions
+from ..scripts.SfcRi import sfc_ri
+from ..scripts.Httc import httc
+from ..scripts.CD import cd
+from ..scripts import TbRurSolver
+from ..scripts import UTCI
 
 
 class Target:

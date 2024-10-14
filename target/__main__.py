@@ -1,10 +1,10 @@
-from target.ui.argparse import main
+from ui.argparse import main
 
 parser = main()
 args = parser.parse_args()
 if "path" in args:
     if args.path:
-        from target.example.generate import generate_example
+        from example.generate import generate_example
 
         if args.metblu and args.empty:
             parser.error("--empty and --obs cannot be used together.")
@@ -23,7 +23,7 @@ if "path" in args:
 elif "conf" in args:
     if args.conf:
 
-        from target.scripts.toolkit import Target
+        from scripts.toolkit import Target
 
         tar = Target(args.conf, args.progress)
         tar.load_config()

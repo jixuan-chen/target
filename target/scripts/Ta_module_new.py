@@ -24,9 +24,9 @@ Outputs:
 """
 
 import math
-from target.scripts.LcSort import lc_sort
-from target.scripts.SfcRi import sfc_ri
-from target.scripts.Httc import httc
+from ..scripts.LcSort import lc_sort
+from ..scripts.SfcRi import sfc_ri
+from ..scripts.Httc import httc
 import numpy as np
 
 
