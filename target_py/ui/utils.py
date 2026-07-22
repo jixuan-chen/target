@@ -1,11 +1,12 @@
 import re
 import os
-import tqdm
 import json
 import math
 import numpy as np
 import pandas as pd
 from configparser import ConfigParser
+
+from .progress import progress_iter
 
 
 def read_config(config_file_path):
@@ -62,12 +63,13 @@ def load_json(file_path):
         parameters = json.load(jsn)
     return parse_json(parameters)
 
-def npy_to_csv(file, progress=False):
+def npy_to_csv(file, progress=False, feedback=None):
     """
     This function converts a .npy file to many corresponding csv files.
 
     :param file: str, file path to binary numpy results file (.npy)
     :param progress: bool, decides if progress bar is shown
+    :param feedback: optional progress-reporting sink (e.g. a QGIS feedback object), see ui/progress.py
     """
 
     folder, name = os.path.split(file)
@@ -80,7 +82,7 @@ def npy_to_csv(file, progress=False):
     array = np.load(file, allow_pickle=True)
 
     columns = array[0].dtype.names
-    for time_step in tqdm.tqdm(range(array.shape[0]), disable=progress):
+    for time_step in progress_iter(range(array.shape[0]), disable=progress, feedback=feedback):
         datestr = array[time_step]["date"][0][0].strftime("%F %H_%M_%S")
         df = pd.DataFrame()
         for c in columns[:-1]:

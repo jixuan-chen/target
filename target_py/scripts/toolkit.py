@@ -1,12 +1,12 @@
 import os
 import sys
 import math
-from tqdm import tqdm
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
 from ..ui.utils import read_config, load_json, npy_to_csv
+from ..ui.progress import progress_iter
 from ..ui.logger import LOG
 
 ################## functions used by the code
@@ -25,13 +25,16 @@ from ..scripts import UTCI
 
 
 class Target:
-    def __init__(self, control_file_name, progress=False):
+    def __init__(self, control_file_name, progress=False, feedback=None):
         self.__validated = False
 
         ## surfaces types that are modelled.
         self.surfs = ['roof', 'road', 'watr', 'conc', 'Veg', 'dry', 'irr', 'wall']
         self.control_file_name = control_file_name
         self.progress = not progress
+        # optional progress-reporting sink, e.g. a QGIS QgsProcessingFeedback/QgsFeedback,
+        # used instead of a console tqdm bar when running inside QGIS. See ui/progress.py
+        self.feedback = feedback
 
     def load_config(self):
         LOG.info("loading config")
@@ -213,7 +216,7 @@ class Target:
         previousTacValues = []
 
         # begin looping through the met forcing data file
-        for i in tqdm(range(0, len(met_data_all))):
+        for i in progress_iter(range(0, len(met_data_all)), disable=self.progress, feedback=self.feedback):
             if i != len(met_data_all) - 1:
                 ############ Met variables for each time step (generate dataframe) ##########
                 dte = self.date1A
@@ -492,7 +495,7 @@ class Target:
 
         if save_csv:
             LOG.info("converting results to csv")
-            npy_to_csv(os.path.join(self.OUT_DIR, self.run + ".npy"), self.progress)
+            npy_to_csv(os.path.join(self.OUT_DIR, self.run + ".npy"), self.progress, self.feedback)
 
     def __init_validation(self):
 
@@ -516,12 +519,13 @@ class Target:
     def plot_val_ts(self):
         self.__init_validation()
         LOG.info("plotting val_ts")
-        val_ts(self.cfM, self.stations, self.mod_rslts, self.progress)
+        val_ts(self.cfM, self.stations, self.mod_rslts, self.progress, self.feedback)
 
     def plot_val_ta(self):
         self.__init_validation()
         LOG.info("plotting val_ta")
-        val_ta(self.cfM, self.met_data, self.stations, self.obs_data, self.mod_rslts, self.Dats, self.progress)
+        val_ta(self.cfM, self.met_data, self.stations, self.obs_data, self.mod_rslts, self.Dats, self.progress,
+               self.feedback)
 
     def plot_gis(self):
         self.__init_validation()

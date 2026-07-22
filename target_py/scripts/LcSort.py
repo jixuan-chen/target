@@ -2,6 +2,9 @@ def lc_sort(cs, LC, H, W):
     # LC = [lc_data['roof'][grid], lc_data['road'][grid], lc_data['watr'][grid], lc_data['conc'][grid],
           # lc_data['Veg'][grid], lc_data['dry'][grid], lc_data['irr'][grid]]
 
+    if LC[0] >= 1.0:
+        LC[0] = 0.99  # roof=1.0 makes (1 - LC[0]) in the Wtree calc below divide by zero -> NaN
+
     LC_canyon = LC.copy()
 
     if W < 1.0:
@@ -96,7 +99,7 @@ def lc_sort(cs, LC, H, W):
         value = LC_wRoofAvg[6]
         LC_wRoofAvg[6] = value / LC_wRoofAvgSum
 
-    if svfgA < 0.1:
+    if svfgA <= 0.1:
         fg = 0
     if 0.1 < svfgA <= 0.2:
         fg = 1
@@ -117,7 +120,7 @@ def lc_sort(cs, LC, H, W):
     if svfgA > 0.9:
         fg = 9
 
-    if svfwA < 0.1:
+    if svfwA <= 0.1:
         fw = 0
     if 0.1 < svfwA <= 0.2:
         fw = 1

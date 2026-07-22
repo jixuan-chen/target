@@ -22,7 +22,6 @@ from matplotlib.pyplot import cm
 import warnings
 warnings.filterwarnings("ignore")
 
-from tqdm import tqdm
 import pandas as pd
 import os
 from datetime import datetime, timedelta
@@ -30,13 +29,15 @@ import numpy as np
 from scipy.stats import stats
 import itertools
 
+from ..ui.progress import progress_iter
+
 # import arcpy
 # from arcpy.sa import *
 
 plt.ioff()
 
 
-def val_ts(cfM, stations, mod_rslts, progress):
+def val_ts(cfM, stations, mod_rslts, progress, feedback=None):
     ts_obs_file1 = os.path.join(cfM['work_dir'], cfM['site_name'], 'obs', 'stations_LST', cfM['ts_prd1'])
     ts_obs_file2 = os.path.join(cfM['work_dir'], cfM['site_name'], 'obs', 'stations_LST', cfM['ts_prd2'])
     ts_fig_dir = os.path.join(cfM['work_dir'], cfM['site_name'], 'plots', cfM['run_name'])
@@ -76,7 +77,7 @@ def val_ts(cfM, stations, mod_rslts, progress):
     Ts2_m = []  ## defining some cummulative lists
 
     cnt = -1
-    for st in tqdm(stations, disable=progress):
+    for st in progress_iter(stations, disable=progress, feedback=feedback):
         cnt += 1
         mod_station = mod_rslts[mod_rslts['ID'] == st]
         mod_dates1 = mod_station[(mod_station['date'] >= date1Ts1) & (mod_station['date'] <= date1Ts2)]
@@ -148,7 +149,7 @@ def val_ts(cfM, stations, mod_rslts, progress):
     plt.close('all')
 
 
-def val_ta(cfM, met_data, stations, obs_data, mod_rslts, Dats, progress):
+def val_ta(cfM, met_data, stations, obs_data, mod_rslts, Dats, progress, feedback=None):
     fig_dir = os.path.join(cfM['work_dir'], cfM['site_name'], 'plots', cfM['run_name'])
     station_path = os.path.join(fig_dir, '{radi}_station_{st_name}.png')
 
@@ -205,7 +206,7 @@ def val_ta(cfM, met_data, stations, obs_data, mod_rslts, Dats, progress):
     c = 0
     STa = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '16', '17', '18', '19', '20',
            '21', '22', '23', '24', '25', '26', '27', '28', '29', '30']
-    for st in tqdm(stations, disable=progress):
+    for st in progress_iter(stations, disable=progress, feedback=feedback):
 
         nfig = nfig + 1
         fig = plt.figure(nfig, figsize=(8., 8.), dpi=300)

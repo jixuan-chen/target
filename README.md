@@ -1,5 +1,15 @@
 # Target
-Target stands for The Air-temperature Response to Green/blue-infrastructure Evaluation Tool. Check out the [publication](https://www.geosci-model-dev.net/12/785/2019/gmd-12-785-2019.html).
+
+TARGET stands for The Air-temperature Response to Green/blue-infrastructure Evaluation Tool. This is the Python port of the model. Check out the [publication](https://www.geosci-model-dev.net/12/785/2019/gmd-12-785-2019.html).
+
+The original Java implementation, published alongside the paper, is available at [Target-Java.v2](https://github.com/mothlight/Target-Java.v2).
+
+## License
+
+TARGET is the work of Broadbent et al. (2019) and is distributed under the **Creative Commons Attribution-NonCommercial-ShareAlike 2.0 (CC BY-NC-SA 2.0)** license.
+
+> Broadbent, A. M., Coutts, A. M., Nice, K. A., Demuzere, M., Krayenhoff, E. S., Tapper, N. J., & Wouters, H. (2019). The Air-temperature Response to Green/blue-infrastructure Evaluation Tool (TARGET v1.0): an efficient and user-friendly model of city cooling. *Geoscientific Model Development*, 12(2), 785–803. https://doi.org/10.5194/gmd-12-785-2019
+
 ## Installation
 
 ```sh 
@@ -30,7 +40,9 @@ generate_example(
 conf_path = os.path.join(home_path, "my_site","config.ini")
 tar = Target(
   conf_path,            # passing the simulation's config file
-  progress=True         # show progress bars
+  progress=True,        # show progress bars
+  feedback=None         # optional progress sink, e.g. a QGIS QgsProcessingFeedback/QgsFeedback
+                         # instance, when running inside QGIS - see "Progress reporting" below
   )
 tar.load_config()
 
@@ -73,6 +85,21 @@ python -m target_py gen -p "your-desired-path" --empty --site my_new_site --run 
  - saving output in csv files `--save-csv`
 ```sh
 python -m target_py run -c "path-to-ini-file"  -p --save-csv
+```
+
+## Progress reporting
+
+By default, progress is shown as a console `tqdm` bar. This is also this package's mechanism for
+integrating with tools like QGIS, where a raw `tqdm` bar can cause issues in the embedded console.
+
+Pass a `feedback` object to `Target(...)` (via Python) that implements `setProgress(percent)` -
+e.g. a QGIS `QgsProcessingFeedback`/`QgsFeedback` instance - and progress will be reported through
+it instead of printed to the console. `target_py` does not import `qgis` itself, so this works
+whether or not QGIS is installed. If `feedback` also implements `isCanceled()`, the run will stop
+early once it returns `True`.
+
+```python
+tar = Target(conf_path, progress=True, feedback=qgis_feedback)
 ```
 
 ## Tips - Parameters
