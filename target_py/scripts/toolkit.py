@@ -40,8 +40,7 @@ class Target:
         LOG.info("loading config")
         self.cfM = read_config(self.control_file_name)
         # parse dates for input met file using format defined in control file
-        date_format = self.cfM['date_fmt']
-        self.dateparse = lambda x: pd.to_datetime(x, format=date_format)
+        self.date_format = self.cfM['date_fmt']
         # model run name
         self.run = self.cfM['run_name']
         # time step (minutes)
@@ -148,7 +147,7 @@ class Target:
         ########## DEFINE INPUT MET FILE LOCATION HERE #######
         # input meteorological forcing data file
         # convert to data frame
-        self.met_data = pd.read_csv(self.MET_FILE, parse_dates=['datetime'], date_parser=self.dateparse,
+        self.met_data = pd.read_csv(self.MET_FILE, parse_dates=['datetime'], date_format=self.date_format,
                                     index_col=['datetime'])
 
         # read lat&lon info
@@ -511,7 +510,7 @@ class Target:
             ############## OBS AWS DATA files  #############################
             # file for observed AWS data
             # reads observed AWS data and puts in dataframe  | only gets used if validating air temp (plotting.py)
-            self.obs_data = pd.read_csv(self.OBS_FILE, parse_dates=['TIMESTAMP'], date_parser=self.dateparse,
+            self.obs_data = pd.read_csv(self.OBS_FILE, parse_dates=['TIMESTAMP'], date_format=self.date_format,
                                         index_col=['TIMESTAMP'])
 
             self.__validated = True

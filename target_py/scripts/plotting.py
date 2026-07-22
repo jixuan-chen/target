@@ -26,7 +26,7 @@ import pandas as pd
 import os
 from datetime import datetime, timedelta
 import numpy as np
-from scipy.stats import stats
+from scipy import stats
 import itertools
 
 from ..ui.progress import progress_iter
