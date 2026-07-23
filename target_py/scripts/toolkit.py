@@ -63,12 +63,12 @@ class Target:
         # date range for model period
         date_range = pd.date_range(self.date1,
                                    self.date2,
-                                   freq=self.tmstp + 'T')
+                                   freq=self.tmstp + 'min')
 
         # date range for model period (i.e. including spin-up period)
         date_range1A = pd.date_range(self.date1A,
                                      (self.date2 - timedelta(hours=1)),
-                                     freq=self.tmstp + 'T')
+                                     freq=self.tmstp + 'min')
 
         # this is a dictionary with all the date/time information
         self.Dats = {'date1A': self.date1A,
@@ -147,8 +147,8 @@ class Target:
         ########## DEFINE INPUT MET FILE LOCATION HERE #######
         # input meteorological forcing data file
         # convert to data frame
-        self.met_data = pd.read_csv(self.MET_FILE, parse_dates=['datetime'], date_format=self.date_format,
-                                    index_col=['datetime'])
+        self.met_data = pd.read_csv(self.MET_FILE, index_col=['datetime'])
+        self.met_data.index = pd.to_datetime(self.met_data.index, format=self.date_format)
 
         # read lat&lon info
         self.lonResolution = float(self.cfM['lonresolution'])
@@ -510,8 +510,8 @@ class Target:
             ############## OBS AWS DATA files  #############################
             # file for observed AWS data
             # reads observed AWS data and puts in dataframe  | only gets used if validating air temp (plotting.py)
-            self.obs_data = pd.read_csv(self.OBS_FILE, parse_dates=['TIMESTAMP'], date_format=self.date_format,
-                                        index_col=['TIMESTAMP'])
+            self.obs_data = pd.read_csv(self.OBS_FILE, index_col=['TIMESTAMP'])
+            self.obs_data.index = pd.to_datetime(self.obs_data.index, format=self.date_format)
 
             self.__validated = True
 
