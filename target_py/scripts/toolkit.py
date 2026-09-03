@@ -222,6 +222,7 @@ class Target:
                 dte = dte + timedelta(minutes=(i * int(self.tmstp)))  # current timestep
                 self.Dats['dte'] = dte
                 met_d = met_data_all
+                met_d = met_d.reset_index(drop=True)  # makes it possible to also run on pandas version 3
 
                 ## BEGIN CALCULATION of Tb_rur
                 ref_surf1 = 'dry'
